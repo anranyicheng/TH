@@ -3,7 +3,9 @@
 (defpackage :th.db.mnist
   (:use #:common-lisp
         #:mu
-        #:th)
+        #:th
+		#:th.db.mnist-original)
+  (:shadowing-import-from #:th.db.mnist-original :read-mnist-data)
   (:export #:read-mnist-data))
 
 (in-package :th.db.mnist)
@@ -12,28 +14,28 @@
 
 (defun mfn (n &key (loc +mnist-location+)) (strcat loc "/" n))
 
-;; (defun generate-mnist-data (&key (loc +mnist-location+))
-;;   (let ((orig-mnist (th.db.mnist-original::read-mnist-data :normalize nil :onehot nil)))
-;;     (let ((train-images ($ orig-mnist :train-images))
-;;           (train-labels ($ orig-mnist :train-labels))
-;;           (test-images ($ orig-mnist :test-images))
-;;           (test-labels ($ orig-mnist :test-labels)))
-;;       (let ((f (file.disk (mfn "mnist-train-images.tensor" :loc loc) "w")))
-;;         (setf ($fbinaryp f) t)
-;;         ($fwrite (tensor.byte train-images) f)
-;;         ($fclose f))
-;;       (let ((f (file.disk (mfn "mnist-train-labels.tensor" :loc loc) "w")))
-;;         (setf ($fbinaryp f) t)
-;;         ($fwrite (tensor.byte train-labels) f)
-;;         ($fclose f))
-;;       (let ((f (file.disk (mfn "mnist-test-images.tensor" :loc loc) "w")))
-;;         (setf ($fbinaryp f) t)
-;;         ($fwrite (tensor.byte test-images) f)
-;;         ($fclose f))
-;;       (let ((f (file.disk (mfn "mnist-test-labels.tensor" :loc loc) "w")))
-;;         (setf ($fbinaryp f) t)
-;;         ($fwrite (tensor.byte test-labels) f)
-;;         ($fclose f)))))
+(defun generate-mnist-data (&key (loc +mnist-location+))
+  (let ((orig-mnist (th.db.mnist-original::read-mnist-data :normalize nil :onehot nil)))
+    (let ((train-images ($ orig-mnist :train-images))
+          (train-labels ($ orig-mnist :train-labels))
+          (test-images ($ orig-mnist :test-images))
+          (test-labels ($ orig-mnist :test-labels)))
+      (let ((f (file.disk (mfn "mnist-train-images.tensor" :loc loc) "w")))
+        (setf ($fbinaryp f) t)
+        ($fwrite (tensor.byte train-images) f)
+        ($fclose f))
+      (let ((f (file.disk (mfn "mnist-train-labels.tensor" :loc loc) "w")))
+        (setf ($fbinaryp f) t)
+        ($fwrite (tensor.byte train-labels) f)
+        ($fclose f))
+      (let ((f (file.disk (mfn "mnist-test-images.tensor" :loc loc) "w")))
+        (setf ($fbinaryp f) t)
+        ($fwrite (tensor.byte test-images) f)
+        ($fclose f))
+      (let ((f (file.disk (mfn "mnist-test-labels.tensor" :loc loc) "w")))
+        (setf ($fbinaryp f) t)
+        ($fwrite (tensor.byte test-labels) f)
+        ($fclose f)))))
 
 (defun read-mnist-images-tensor (n &key (loc +mnist-location+) (normalize T))
   (let ((f (file.disk (mfn n :loc loc) "r"))
@@ -42,8 +44,8 @@
     ($fread m f)
     ($fclose f)
     (if normalize
-        ($div! (tensor.float m) 255)
-        (tensor.float m))))
+        ($div! (tensor.double m) 255)   ;; 修改参数 tensor.float -> tensor.double
+        (tensor.double m))))
 
 (defun read-mnist-labels-tensor (n &key (loc +mnist-location+) (onehot T))
   (let ((f (file.disk (mfn n :loc loc) "r"))
